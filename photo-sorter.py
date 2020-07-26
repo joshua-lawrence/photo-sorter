@@ -1,20 +1,17 @@
+from PIL import Image as Img
+from PIL import ImageTk
 from tkinter import *
+from tkinter import filedialog
 import tkinter.font as font
-from PIL import ImageTk,Image
 import rawpy
-import os
+import os, sys
 
-import os
-if not os.path.exists('saved'):
-    os.makedirs('saved')
-
-import os
-if not os.path.exists('discarded'):
-    os.makedirs('discarded')
 
 root = Tk()
 
 root.title('Image Sorter')
+
+application_path = filedialog.askdirectory()
 
 image_list = []
 file_list = []
@@ -24,6 +21,11 @@ max_height = root.winfo_screenheight() - 100
 root.state('zoomed')
 
 main_frame = Frame(root, bg="grey")
+
+if not os.path.exists(application_path + '/saved'):
+    os.makedirs(application_path + '/saved')
+if not os.path.exists(application_path + '/discarded'):
+    os.makedirs(application_path + '/discarded')
 
 main_frame.grid(row=0, column=1, sticky="NESW")
 main_frame.grid_rowconfigure(0, weight=1)
@@ -35,7 +37,7 @@ myFont = font.Font(family='Helvetica', size=20, weight='bold')
 
 def how_many_images():
     global count
-    for file in os.listdir("."):
+    for file in os.listdir(application_path):
         if file.endswith(".NEF"):
              count = count + 1
             
@@ -43,13 +45,13 @@ how_many_images()
 
 def load_images():
     current = 0
-    for file in os.listdir("."):
+    for file in os.listdir(application_path):
         if file.endswith(".NEF"):
 
             #Read in the raw file, process it, and convert it into an image PIL can use.
-            raw = rawpy.imread(file)
+            raw = rawpy.imread(application_path + '/' + file)
             rgb = raw.postprocess()
-            img = Image.fromarray(rgb)
+            img = Img.fromarray(rgb)
 
             h, w = img.size
 
@@ -70,11 +72,6 @@ load_images()
 
 global current_image
 current_image = 0
-
-if len(image_list) == 0:
-    my_label = Label(text = "There aren't any files here")
-    my_label.grid(row=0, column=0, columnspan=3)
-    exit
 
 
 my_label = Label(image=image_list[current_image])
@@ -144,7 +141,7 @@ def save(event=None):
     global current_image
     global image_list
     global file_list
-    os.rename(file_list[current_image], './saved/' + file_list[current_image])
+    os.rename(application_path + '/' + file_list[current_image], application_path + '/saved/' + file_list[current_image])
 
     file_list.pop(current_image)
     image_list.pop(current_image)
@@ -158,7 +155,7 @@ def discard(event=None):
     global current_image
     global image_list
     global file_list
-    os.rename(file_list[current_image], './discarded/' + file_list[current_image])
+    os.rename(application_path + '/' + file_list[current_image], application_path + '/discarded/' + file_list[current_image])
 
     file_list.pop(current_image)
     image_list.pop(current_image)
@@ -184,6 +181,15 @@ button_back['font'] = myFont
 
 button_back.grid(row=0, column=0)
 button_forward.grid(row=0, column=2)
+
+def fix():
+    a = root.winfo_geometry().split('+')[0]
+    b = a.split('x')
+    w = int(b[0])
+    h = int(b[1])
+    root.geometry('%dx%d' % (w+1,h+1))
+root.update()
+root.after(0, fix)
 
 root.mainloop()
                             
